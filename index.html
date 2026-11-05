@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mandarin Helper</title>
+<style>
+  :root { --bg:#faf7f2; --card:#fff; --ink:#222; --accent:#b3261e; --muted:#777; --line:#e6dfd3; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--ink); }
+  main { max-width: 820px; margin: 0 auto; padding: 24px 16px 80px; }
+  h1 { font-size: 1.4rem; margin: 0 0 16px; }
+  textarea { width:100%; min-height:90px; padding:12px; font-size:1.1rem; border:1px solid var(--line); border-radius:10px; resize:vertical; }
+  button { background:var(--accent); color:#fff; border:0; padding:10px 18px; border-radius:8px; font-size:1rem; cursor:pointer; }
+  button.secondary { background:#fff; color:var(--accent); border:1px solid var(--accent); }
+  button:disabled { opacity:.5; cursor:wait; }
+  .row { display:flex; gap:10px; margin:12px 0; align-items:center; flex-wrap:wrap; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-top:16px; }
+  .words { display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
+  .word { border:1px solid var(--line); border-radius:10px; padding:8px 12px; text-align:center; cursor:pointer; background:#fffdf9; }
+  .word:hover { border-color:var(--accent); }
+  .word .zh { font-size:1.8rem; }
+  .word .py { font-size:.85rem; color:var(--accent); }
+  .word .en { font-size:.8rem; color:var(--muted); max-width:120px; }
+  .chars { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0; }
+  .char { font-size:2.2rem; border:1px solid var(--line); border-radius:8px; padding:4px 12px; cursor:pointer; background:#fff; }
+  .char:hover, .char.active { border-color:var(--accent); background:#fdeceb; }
+  .big { font-size:2rem; }
+  .pinyin { color:var(--accent); font-size:1.1rem; }
+  .muted { color:var(--muted); }
+  .comp { display:inline-block; margin:4px 8px 4px 0; padding:6px 10px; background:#f3efe6; border-radius:8px; }
+  .comp b { font-size:1.4rem; margin-right:6px; }
+  .err { color:#b00020; }
+  .hidden { display:none; }
+  #detail { position:sticky; bottom:0; }
+  .explain { white-space:pre-wrap; line-height:1.5; margin-top:10px; }
+  .key { font-size:.8rem; color:var(--muted); margin-top:20px; }
+  a { color:var(--accent); cursor:pointer; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Mandarin Helper</h1>
+  <textarea id="input" placeholder="Type English or Chinese... e.g. Friday, 星期五, or a full sentence"></textarea>
+  <div class="row">
+    <button id="go">Translate</button>
+    <span id="status" class="muted"></span>
+  </div>
+
+  <div id="result" class="card hidden">
+    <div id="direction" class="muted"></div>
+    <div id="main"></div>
+    <div class="muted" style="margin-top:14px">Tap any word or character for details:</div>
+    <div id="words" class="words"></div>
+  </div>
+
+  <div id="detail" class="card hidden">
+    <div id="detailHead"></div>
+    <div id="detailChars" class="chars"></div>
+    <div id="charInfo"></div>
+    <div class="row">
+      <button id="explainBtn" class="secondary">Explain the radicals in more depth</button>
+    </div>
+    <div id="explain" class="explain"></div>
+  </div>
+
+  <div class="key">
+    <a id="changeKey">Change API key</a> · Your key stays in this browser only.
+  </div>
+</main>
+
+<script>
+const MODEL = "claude-sonnet-4-5";
+const $ = id => document.getElementById(id);
+const hasChinese = s => /[\u4e00-\u9fff]/.test(s);
+
+function getKey() {
+  let k = localStorage.getItem("anthropic_key");
+  if (!k) {
+    k = prompt("Paste your Anthropic API key (stored only in this browser):");
+    if (k) localStorage.setItem("anthropic_key", k.trim());
+  }
+  return k;
+}
+$("changeKey").onclick = () => { localStorage.removeItem("anthropic_key"); getKey(); };
+
+async function askClaude(prompt, maxTokens = 1500) {
+  const key = getKey();
+  if (!key) throw new Error("No API key provided.");
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: maxTokens,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+  if (!res.ok) throw new Error("API error " + res.status + ": " + await res.text());
+  const data = await res.json();
+  return data.content[0].text;
+}
+
+function parseJSON(text) {
+  const m = text.match(/\{[\s\S]*\}/);
+  if (!m) throw new Error("Could not parse response.");
+  return JSON.parse(m[0]);
+}
+
+let current = null;
+
+async function translate() {
+  const text = $("input").value.trim();
+  if (!text) return;
+  $("go").disabled = true;
+  $("status").textContent = "Translating...";
+  $("detail").classList.add("hidden");
+  try {
+    const dir = hasChinese(text) ? "zh-to-en" : "en-to-zh";
+    const prompt = `You are a Mandarin teacher's translation engine. Direction: ${dir}.
+Input: "${text}"
+Return ONLY JSON in this exact shape:
+{
+  "chinese": "simplified Chinese text",
+  "pinyin": "full pinyin with tone marks",
+  "english": "natural English translation",
+  "words": [ { "zh": "word", "pinyin": "pinyin", "en": "short meaning" } ]
+}
+"words" is the Chinese text segmented into natural words in order, including particles. If the input is a single word, words has one entry.`;
+    const out = parseJSON(await askClaude(prompt));
+    current = out;
+    $("direction").textContent = dir === "en-to-zh" ? "English → Chinese" : "Chinese → English";
+    $("main").innerHTML = `
+      <div class="big">${out.chinese}</div>
+      <div class="pinyin">${out.pinyin}</div>
+      <div>${out.english}</div>`;
+    $("words").innerHTML = "";
+    out.words.forEach(w => {
+      const d = document.createElement("div");
+      d.className = "word";
+      d.innerHTML = `<div class="zh">${w.zh}</div><div class="py">${w.pinyin}</div><div class="en">${w.en}</div>`;
+      d.onclick = () => openWord(w);
+      $("words").appendChild(d);
+    });
+    $("result").classList.remove("hidden");
+    $("status").textContent = "";
+  } catch (e) {
+    $("status").innerHTML = `<span class="err">${e.message}</span>`;
+  }
+  $("go").disabled = false;
+}
+
+let activeChar = null;
+
+function openWord(w) {
+  $("detail").classList.remove("hidden");
+  $("detailHead").innerHTML = `<span class="big">${w.zh}</span> <span class="pinyin">${w.pinyin}</span><div>${w.en}</div>`;
+  $("explain").textContent = "";
+  const chars = [...w.zh].filter(hasChinese);
+  $("detailChars").innerHTML = "";
+  chars.forEach(c => {
+    const b = document.createElement("span");
+    b.className = "char";
+    b.textContent = c;
+    b.onclick = () => openChar(c, b);
+    $("detailChars").appendChild(b);
+  });
+  if (chars.length) openChar(chars[0], $("detailChars").firstChild);
+  else $("charInfo").innerHTML = "";
+  $("detail").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+async function openChar(c, el) {
+  activeChar = c;
+  document.querySelectorAll(".char").forEach(x => x.classList.remove("active"));
+  if (el) el.classList.add("active");
+  $("explain").textContent = "";
+  $("charInfo").innerHTML = '<span class="muted">Loading...</span>';
+  try {
+    const prompt = `Give learner info for the Chinese character "${c}". Return ONLY JSON:
+{
+  "char": "${c}",
+  "pinyin": "pinyin with tone mark",
+  "definition": "clear English definition(s) of this single character",
+  "radical": { "symbol": "main radical", "meaning": "its meaning" },
+  "components": [ { "symbol": "component", "meaning": "meaning", "role": "semantic or phonetic or other" } ],
+  "example_words": [ { "zh": "word", "pinyin": "pinyin", "en": "meaning" } ]
+}
+Give 2 to 3 example words.`;
+    const d = parseJSON(await askClaude(prompt, 1000));
+    if (activeChar !== c) return;
+    $("charInfo").innerHTML = `
+      <div><span class="big">${d.char}</span> <span class="pinyin">${d.pinyin}</span></div>
+      <div><b>Definition:</b> ${d.definition}</div>
+      <div style="margin-top:8px"><b>Main radical:</b> ${d.radical.symbol} <span class="muted">(${d.radical.meaning})</span></div>
+      <div style="margin-top:6px"><b>Components:</b><br>${d.components.map(x =>
+        `<span class="comp"><b>${x.symbol}</b>${x.meaning} <span class="muted">(${x.role})</span></span>`).join("")}</div>
+      <div style="margin-top:8px"><b>Used in:</b> ${d.example_words.map(x => `${x.zh} (${x.pinyin}) ${x.en}`).join(" · ")}</div>`;
+  } catch (e) {
+    $("charInfo").innerHTML = `<span class="err">${e.message}</span>`;
+  }
+}
+
+$("explainBtn").onclick = async () => {
+  if (!activeChar) return;
+  $("explain").textContent = "Thinking...";
+  try {
+    const t = await askClaude(`Explain the Chinese character "${activeChar}" for a Mandarin learner. Describe each radical and component, what it means, and how they combine to give the character its meaning or sound. Include a short memory trick and the character's etymology if known. Keep it under 150 words, plain text, no markdown.`, 700);
+    $("explain").textContent = t;
+  } catch (e) {
+    $("explain").innerHTML = `<span class="err">${e.message}</span>`;
+  }
+};
+
+$("go").onclick = translate;
+$("input").addEventListener("keydown", e => {
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) translate();
+});
+</script>
+</body>
+</html>
