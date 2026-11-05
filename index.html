@@ -75,7 +75,7 @@ dialog a{color:var(--blue)}
   <div class="logo"><b>文</b><span>Mandarin Translate</span></div>
   <button class="icon" id="gear" aria-label="Settings">⚙</button>
 </header>
- 
+
 <main>
   <div class="langbar">
     <div class="lang" id="l1">English</div>
@@ -95,7 +95,7 @@ dialog a{color:var(--blue)}
   </div>
   <section id="panel" hidden></section>
 </main>
- 
+
 <dialog id="dlg">
   <h2 style="margin:0 0 6px;font-weight:500">Connect OpenAI</h2>
   <p>Paste an OpenAI API key. It is saved only in this browser and sent only to api.openai.com. Create one at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a>. A ChatGPT subscription does not include API access, so API billing must be enabled.</p>
@@ -110,7 +110,7 @@ dialog a{color:var(--blue)}
     <button class="primary" id="save">Save</button>
   </div>
 </dialog>
- 
+
 <script>
 const $ = s => document.querySelector(s);
 const store = {
@@ -120,15 +120,15 @@ const store = {
 };
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const CJK = /[\u3400-\u9fff]/;
- 
+
 let key = store.get("oa_key", "");
 let model = store.get("oa_model", "gpt-4o-mini");
 let script = store.get("oa_script", "Simplified");
 let src = "en", last = null, sugTimer = null, sugCtl = null, sugToken = 0;
 const sugCache = new Map(), charCache = new Map();
- 
+
 const inp = $("#inp"), out = $("#out"), panel = $("#panel"), sug = $("#sug");
- 
+
 /* ---------- OpenAI ---------- */
 async function ask(system, user, signal) {
   const k = key.replace(/[^\x21-\x7e]/g, "");
@@ -163,13 +163,13 @@ async function ask(system, user, signal) {
   if (!txt) throw new Error("OpenAI returned an empty reply. Try a different model in settings.");
   try { return JSON.parse(txt); } catch { throw new Error("OpenAI returned a reply the app could not read. Try again."); }
 }
- 
+
 function fail(el, e) {
   if (e.name === "AbortError") return;
   el.innerHTML = '<div class="err">' + esc((e.name && e.name !== "Error" ? e.name + ": " : "") + e.message) + (e.status === 401 ? " Check your API key in settings." : "") + "</div>";
   if (e.status === 401) openSettings();
 }
- 
+
 /* ---------- Language bar ---------- */
 function setSrc(s) {
   src = s;
@@ -182,7 +182,7 @@ $("#swap").onclick = () => {
   setSrc(src === "en" ? "zh" : "en");
   if (target) { inp.value = target; translate(); } else hideSug();
 };
- 
+
 /* ---------- Translate ---------- */
 async function translate() {
   const text = inp.value.trim();
@@ -201,7 +201,7 @@ async function translate() {
     renderOut(r);
   } catch (e) { fail(out, e); }
 }
- 
+
 function renderOut(r) {
   const toZh = src === "en";
   const main = toZh ? r.chinese : r.english;
@@ -219,7 +219,7 @@ function renderOut(r) {
      <div class="sec">Tap a word to explore it</div>
      <div class="chips">${chips}</div>`;
 }
- 
+
 /* ---------- Word and character panel ---------- */
 function showWord(i, chipEl) {
   const w = last.words[i];
@@ -241,7 +241,7 @@ function showWord(i, chipEl) {
   if (w.chars.length === 1) showChar(w.chars[0].zh);
   panel.scrollIntoView({ block: "nearest" });
 }
- 
+
 async function showChar(ch, rowEl) {
   document.querySelectorAll(".crow.on").forEach(c => c.classList.remove("on"));
   if (rowEl) rowEl.classList.add("on");
@@ -269,10 +269,10 @@ async function showChar(ch, rowEl) {
       `<p>${esc(d.explanation)}</p></div>`;
   } catch (e) { fail(cd, e); }
 }
- 
+
 /* ---------- Live suggestions ---------- */
 function hideSug() { sug.hidden = true; sug.innerHTML = ""; if (sugCtl) sugCtl.abort(); }
- 
+
 inp.addEventListener("input", () => {
   const t = inp.value;
   if (CJK.test(t) && src === "en") setSrc("zh");
@@ -282,7 +282,7 @@ inp.addEventListener("input", () => {
   if (!key || !q || q.length > 40 || q.includes("\n") || (src === "en" && q.length < 2)) { hideSug(); return; }
   sugTimer = setTimeout(() => suggest(q), 350);
 });
- 
+
 async function suggest(q) {
   const token = ++sugToken;
   const ck = src + "|" + script + "|" + q.toLowerCase();
@@ -308,7 +308,7 @@ async function suggest(q) {
     }).join("");
   } catch (e) { if (e.name !== "AbortError") hideSug(); }
 }
- 
+
 /* ---------- Events ---------- */
 sug.addEventListener("click", e => {
   const b = e.target.closest("[data-s]");
@@ -334,7 +334,7 @@ document.addEventListener("click", e => {
 inp.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); translate(); } });
 $("#go").onclick = translate;
 $("#clr").onclick = () => { inp.value = ""; hideSug(); out.innerHTML = '<div class="ph">Translation</div>'; panel.hidden = true; last = null; inp.focus(); };
- 
+
 /* ---------- Settings ---------- */
 const dlg = $("#dlg");
 function openSettings() {
@@ -350,7 +350,7 @@ $("#save").onclick = () => {
 };
 $("#forget").onclick = () => { key = ""; store.del("oa_key"); $("#key").value = ""; };
 if (!key) openSettings();
- 
+
 /* Show any unexpected error on screen */
 const showErr = m => { out.innerHTML = '<div class="err">' + esc(m) + "</div>"; };
 window.addEventListener("error", e => showErr(e.message));
@@ -358,5 +358,3 @@ window.addEventListener("unhandledrejection", e => showErr(e.reason && e.reason.
 </script>
 </body>
 </html>
- 
-Claude finished the response
