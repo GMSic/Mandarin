@@ -2,225 +2,327 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mandarin Helper</title>
 <style>
-  :root { --bg:#faf7f2; --card:#fff; --ink:#222; --accent:#b3261e; --muted:#777; --line:#e6dfd3; }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family: -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--ink); }
-  main { max-width: 820px; margin: 0 auto; padding: 24px 16px 80px; }
-  h1 { font-size: 1.4rem; margin: 0 0 16px; }
-  textarea { width:100%; min-height:90px; padding:12px; font-size:1.1rem; border:1px solid var(--line); border-radius:10px; resize:vertical; }
-  button { background:var(--accent); color:#fff; border:0; padding:10px 18px; border-radius:8px; font-size:1rem; cursor:pointer; }
-  button.secondary { background:#fff; color:var(--accent); border:1px solid var(--accent); }
-  button:disabled { opacity:.5; cursor:wait; }
-  .row { display:flex; gap:10px; margin:12px 0; align-items:center; flex-wrap:wrap; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-top:16px; }
-  .words { display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
-  .word { border:1px solid var(--line); border-radius:10px; padding:8px 12px; text-align:center; cursor:pointer; background:#fffdf9; }
-  .word:hover { border-color:var(--accent); }
-  .word .zh { font-size:1.8rem; }
-  .word .py { font-size:.85rem; color:var(--accent); }
-  .word .en { font-size:.8rem; color:var(--muted); max-width:120px; }
-  .chars { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0; }
-  .char { font-size:2.2rem; border:1px solid var(--line); border-radius:8px; padding:4px 12px; cursor:pointer; background:#fff; }
-  .char:hover, .char.active { border-color:var(--accent); background:#fdeceb; }
-  .big { font-size:2rem; }
-  .pinyin { color:var(--accent); font-size:1.1rem; }
-  .muted { color:var(--muted); }
-  .comp { display:inline-block; margin:4px 8px 4px 0; padding:6px 10px; background:#f3efe6; border-radius:8px; }
-  .comp b { font-size:1.4rem; margin-right:6px; }
-  .err { color:#b00020; }
-  .hidden { display:none; }
-  #detail { position:sticky; bottom:0; }
-  .explain { white-space:pre-wrap; line-height:1.5; margin-top:10px; }
-  .key { font-size:.8rem; color:var(--muted); margin-top:20px; }
-  a { color:var(--accent); cursor:pointer; }
+:root{--bg:#fff;--surface:#f8f9fa;--ink:#202124;--muted:#5f6368;--line:#dadce0;--blue:#1a73e8;--soft:#e8f0fe;--red:#d93025}
+@media(prefers-color-scheme:dark){:root{--bg:#202124;--surface:#2d2e31;--ink:#e8eaed;--muted:#9aa0a6;--line:#3c4043;--blue:#8ab4f8;--soft:#2a3a55;--red:#f28b82}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Google Sans",Roboto,-apple-system,"Segoe UI","PingFang SC","Noto Sans SC",sans-serif;background:var(--bg);color:var(--ink);padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+header h1{font-size:1.25rem;font-weight:400;margin:0;color:var(--muted)}
+header h1 b{color:var(--blue);font-weight:500}
+main{max-width:960px;margin:0 auto;padding:16px 12px 40vh}
+.langbar{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--blue);font-weight:500;font-size:.95rem;margin-bottom:12px}
+.langbar span{padding:6px 14px;border-bottom:2px solid var(--blue)}
+.langbar i{font-style:normal;color:var(--muted)}
+.panes{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+@media(max-width:700px){.panes{grid-template-columns:1fr}}
+.pane{padding:14px 16px;min-height:200px;position:relative}
+.pane.out{background:var(--surface);border-left:1px solid var(--line)}
+@media(max-width:700px){.pane.out{border-left:0;border-top:1px solid var(--line)}}
+textarea{width:100%;min-height:130px;border:0;outline:0;resize:none;background:transparent;color:var(--ink);font:inherit;font-size:1.5rem;line-height:1.4}
+textarea::placeholder{color:var(--muted)}
+.tools{display:flex;align-items:center;gap:8px;margin-top:6px}
+.tools .sp{flex:1}
+button{font:inherit;cursor:pointer}
+.btn{background:var(--blue);color:var(--bg);border:0;border-radius:18px;padding:8px 20px;font-weight:500}
+.btn:disabled{opacity:.5;cursor:wait}
+.ghost{background:transparent;border:0;color:var(--muted);border-radius:50%;width:36px;height:36px;font-size:1.1rem}
+.ghost:hover{background:var(--soft)}
+.outline{background:transparent;border:1px solid var(--line);color:var(--blue);border-radius:18px;padding:8px 16px;font-weight:500}
+.outline:hover{background:var(--soft)}
+#sugg{margin:4px -16px -14px;border-top:1px solid var(--line)}
+.s{display:flex;align-items:baseline;gap:10px;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--line)}
+.s:last-child{border-bottom:0}
+.s:hover,.s:focus{background:var(--soft);outline:0}
+.s .zh{font-size:1.15rem}.s .py{color:var(--blue);font-size:.9rem}.s .en{color:var(--muted);font-size:.9rem;margin-left:auto;text-align:right}
+.hint{color:var(--muted);font-size:.9rem}
+.err{color:var(--red);font-size:.9rem}
+#translation{font-size:1.5rem;line-height:1.4;word-break:break-word}
+#pinyinLine{color:var(--blue);margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chip{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:6px 10px;text-align:center;color:var(--ink);min-width:56px}
+.chip:hover,.chip.on{border-color:var(--blue);background:var(--soft)}
+.chip .zh{display:block;font-size:1.7rem;line-height:1.2}
+.chip .py{display:block;font-size:.8rem;color:var(--blue)}
+.chip .en{display:block;font-size:.75rem;color:var(--muted);max-width:110px}
+.keynote{margin-top:16px;font-size:.8rem;color:var(--muted);text-align:center}
+.keynote a{color:var(--blue);cursor:pointer}
+#sheet{position:fixed;left:0;right:0;bottom:0;max-height:72vh;overflow:auto;background:var(--bg);border-top:1px solid var(--line);border-radius:16px 16px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.18);padding:14px 16px calc(16px + env(safe-area-inset-bottom,0));transform:translateY(105%);transition:transform .22s ease;z-index:5}
+#sheet.open{transform:none}
+.inner{max-width:960px;margin:0 auto}
+.head{display:flex;align-items:center;gap:8px}
+.head .grow{flex:1}
+.big{font-size:2.2rem;line-height:1.2}
+.py{color:var(--blue)}
+.chars{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.char{font-size:2rem;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:2px 14px}
+.char:hover,.char.on{border-color:var(--blue);background:var(--soft)}
+.lbl{color:var(--muted);font-size:.85rem;margin-top:12px}
+.comp{display:inline-flex;align-items:baseline;gap:6px;margin:4px 8px 0 0;padding:6px 10px;background:var(--surface);border-radius:8px}
+.comp b{font-size:1.4rem;font-weight:400}
+.explain{white-space:pre-wrap;line-height:1.55;margin-top:10px}
+dialog{width:min(92vw,500px);border:1px solid var(--line);border-radius:16px;background:var(--bg);color:var(--ink);padding:20px}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog h2{margin:0 0 8px;font-size:1.2rem;font-weight:500}
+dialog label{display:block;font-size:.85rem;color:var(--muted);margin-top:12px}
+dialog input{width:100%;margin-top:4px;padding:10px 12px;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px}
+dialog details{margin-top:14px;font-size:.9rem;line-height:1.5}
+dialog summary{cursor:pointer;color:var(--blue);font-weight:500}
+dialog ol{padding-left:20px;margin:8px 0}
+dialog a{color:var(--blue)}
+.dlgrow{display:flex;justify-content:space-between;gap:8px;margin-top:18px}
 </style>
 </head>
 <body>
+<header><h1><b>Mandarin</b> Helper</h1></header>
 <main>
-  <h1>Mandarin Helper</h1>
-  <textarea id="input" placeholder="Type English or Chinese... e.g. Friday, 星期五, or a full sentence"></textarea>
-  <div class="row">
-    <button id="go">Translate</button>
-    <span id="status" class="muted"></span>
+  <div class="langbar"><span>English / Pinyin</span><i>⇄</i><span>中文</span></div>
+  <div class="panes">
+    <section class="pane">
+      <textarea id="input" rows="3" maxlength="300" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type English or Chinese: Friday, 星期五, a sentence, a radical…"></textarea>
+      <div class="tools">
+        <button class="ghost" id="clear" title="Clear" aria-label="Clear">✕</button>
+        <span class="sp hint" id="status"></span>
+        <button class="btn" id="go">Translate</button>
+      </div>
+      <div id="sugg" hidden></div>
+    </section>
+    <section class="pane out">
+      <div id="empty" class="hint">Translation appears here. Tap any word or character for its definition and radicals.</div>
+      <div id="result" hidden>
+        <div class="hint" id="dir"></div>
+        <div id="translation"></div>
+        <div id="pinyinLine"></div>
+        <div class="chips" id="chips"></div>
+      </div>
+    </section>
   </div>
-
-  <div id="result" class="card hidden">
-    <div id="direction" class="muted"></div>
-    <div id="main"></div>
-    <div class="muted" style="margin-top:14px">Tap any word or character for details:</div>
-    <div id="words" class="words"></div>
-  </div>
-
-  <div id="detail" class="card hidden">
-    <div id="detailHead"></div>
-    <div id="detailChars" class="chars"></div>
-    <div id="charInfo"></div>
-    <div class="row">
-      <button id="explainBtn" class="secondary">Explain the radicals in more depth</button>
-    </div>
-    <div id="explain" class="explain"></div>
-  </div>
-
-  <div class="key">
-    <a id="changeKey">Change API key</a> · Your key stays in this browser only.
-  </div>
+  <div class="keynote"><a id="changeKey">ChatGPT / OpenAI key &amp; model</a> · stored only in this browser</div>
 </main>
-
+ 
+<dialog id="setup">
+  <h2>Connect ChatGPT (OpenAI)</h2>
+  <div class="hint">This app talks to OpenAI directly from your browser. It needs an API key.</div>
+  <label for="keyIn">OpenAI API key</label>
+  <input id="keyIn" type="password" placeholder="sk-..." autocomplete="off" autocapitalize="off" spellcheck="false">
+  <label for="modelIn">Model</label>
+  <input id="modelIn" list="modelList" placeholder="gpt-4o-mini" autocomplete="off" autocapitalize="off">
+  <datalist id="modelList"><option value="gpt-4o-mini"><option value="gpt-4o"><option value="gpt-4.1-mini"></datalist>
+  <details>
+    <summary>How do I get a key?</summary>
+    <ol>
+      <li>Open <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a> and sign in with your OpenAI / ChatGPT login.</li>
+      <li>Under Billing, add a few dollars of credit and set a low monthly limit. A ChatGPT Plus subscription does not include API usage, it is billed separately.</li>
+      <li>Tap "Create new secret key", copy it right away (it is shown once), and paste it above.</li>
+    </ol>
+    The key is saved only in this browser on this device. It is not in the code or the GitHub repo.
+  </details>
+  <div class="dlgrow"><button class="outline" id="forgetKey">Forget key</button><button class="btn" id="saveKey">Save</button></div>
+</dialog>
+ 
+<div id="sheet" role="dialog" aria-label="Details">
+  <div class="inner">
+    <div class="head">
+      <div class="grow"><span class="big" id="dZh"></span> <span class="py" id="dPy"></span><div id="dEn"></div></div>
+      <button class="ghost" id="speak" title="Listen" aria-label="Listen">🔊</button>
+      <button class="ghost" id="close" title="Close" aria-label="Close">✕</button>
+    </div>
+    <div class="lbl">Tap a character for its own definition</div>
+    <div class="chars" id="chars"></div>
+    <div id="charInfo"></div>
+    <div style="margin-top:14px"><button class="outline" id="explainBtn">Explain the radicals in more depth</button></div>
+    <div class="explain" id="explain"></div>
+  </div>
+</div>
+ 
 <script>
-const MODEL = "claude-sonnet-4-5";
+const FAST = "gpt-4o-mini";
+let MODEL = localStorage.getItem("openai_model") || "gpt-4o-mini";
 const $ = id => document.getElementById(id);
-const hasChinese = s => /[\u4e00-\u9fff]/.test(s);
-
-function getKey() {
-  let k = localStorage.getItem("anthropic_key");
-  if (!k) {
-    k = prompt("Paste your Anthropic API key (stored only in this browser):");
-    if (k) localStorage.setItem("anthropic_key", k.trim());
-  }
-  return k;
-}
-$("changeKey").onclick = () => { localStorage.removeItem("anthropic_key"); getKey(); };
-
-async function askClaude(prompt, maxTokens = 1500) {
+const hasHan = s => /[\u4e00-\u9fff]/.test(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+ 
+/* ---------- OpenAI key + model setup ---------- */
+const getKey = () => localStorage.getItem("openai_key") || "";
+function openSetup() { $("keyIn").value = getKey(); $("modelIn").value = MODEL; $("setup").showModal(); }
+$("changeKey").onclick = openSetup;
+$("saveKey").onclick = () => {
+  localStorage.setItem("openai_key", $("keyIn").value.trim());
+  MODEL = $("modelIn").value.trim() || "gpt-4o-mini";
+  localStorage.setItem("openai_model", MODEL);
+  suggCache.clear();
+  $("setup").close();
+};
+$("forgetKey").onclick = () => { localStorage.removeItem("openai_key"); $("keyIn").value = ""; suggCache.clear(); };
+ 
+async function ask(prompt, max = 1200, model = MODEL) {
   const key = getKey();
-  if (!key) throw new Error("No API key provided.");
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  if (!key) { openSetup(); throw new Error("Add your OpenAI API key first."); }
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": key,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true"
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: maxTokens,
-      messages: [{ role: "user", content: prompt }]
-    })
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
+    body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }] })
   });
-  if (!res.ok) throw new Error("API error " + res.status + ": " + await res.text());
-  const data = await res.json();
-  return data.content[0].text;
+  if (!res.ok) {
+    let m = ""; try { m = (await res.json()).error.message; } catch (e) {}
+    throw new Error(res.status === 401 ? "OpenAI rejected the key. Check it under ChatGPT / OpenAI key."
+      : res.status === 429 ? "Rate limit or no API credit. Check billing at platform.openai.com."
+      : m || "API error " + res.status);
+  }
+  return (await res.json()).choices[0].message.content;
 }
-
-function parseJSON(text) {
-  const m = text.match(/\{[\s\S]*\}/);
-  if (!m) throw new Error("Could not parse response.");
+function parse(t) {
+  const m = t.match(/[\[{][\s\S]*[\]}]/);
+  if (!m) throw new Error("Could not read the response. Try again.");
   return JSON.parse(m[0]);
 }
-
-let current = null;
-
+function speak(t) {
+  if (!("speechSynthesis" in window) || !t) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(t); u.lang = "zh-CN"; u.rate = .85;
+  speechSynthesis.speak(u);
+}
+ 
+/* ---------- live suggestions ---------- */
+const suggCache = new Map();
+let suggTimer, suggId = 0, suppress = false;
+ 
+function hideSugg() { $("sugg").hidden = true; $("sugg").innerHTML = ""; }
+function showSugg(list, typed) {
+  const box = $("sugg"); box.innerHTML = "";
+  list.slice(0, 6).forEach(s => {
+    const d = document.createElement("div");
+    d.className = "s"; d.tabIndex = 0;
+    d.innerHTML = `<span class="zh">${esc(s.zh)}</span><span class="py">${esc(s.pinyin)}</span><span class="en">${esc(s.en)}</span>`;
+    const pick = () => {
+      suppress = true;
+      $("input").value = hasHan(typed) ? s.zh : s.en;
+      hideSugg(); translate();
+    };
+    d.onclick = pick;
+    d.onkeydown = e => { if (e.key === "Enter") pick(); };
+    box.appendChild(d);
+  });
+  box.hidden = !list.length;
+}
+$("input").addEventListener("input", () => {
+  clearTimeout(suggTimer);
+  if (suppress) { suppress = false; return; }
+  const t = $("input").value.trim();
+  if (!t || t.length > 24 || !getKey()) return hideSugg();
+  suggTimer = setTimeout(async () => {
+    if (suggCache.has(t)) return showSugg(suggCache.get(t), t);
+    const id = ++suggId;
+    try {
+      const out = parse(await ask(
+`A learner is typing "${t}" into an English/Mandarin dictionary. Suggest up to 6 likely words or phrases that match or complete it (English input -> give the Chinese equivalents; Chinese or pinyin input -> give matching Chinese words). Return ONLY a JSON array: [{"zh":"simplified Chinese","pinyin":"pinyin with tone marks","en":"short English meaning"}]`, 500, FAST));
+      suggCache.set(t, out);
+      if (id === suggId && $("input").value.trim() === t) showSugg(out, t);
+    } catch (e) { /* suggestions are optional; stay quiet */ }
+  }, 280);
+});
+$("input").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); hideSugg(); translate(); }
+});
+$("clear").onclick = () => { $("input").value = ""; hideSugg(); $("result").hidden = true; $("empty").hidden = false; closeSheet(); $("input").focus(); };
+ 
+/* ---------- translate ---------- */
 async function translate() {
   const text = $("input").value.trim();
   if (!text) return;
-  $("go").disabled = true;
-  $("status").textContent = "Translating...";
-  $("detail").classList.add("hidden");
+  suggId++; clearTimeout(suggTimer); hideSugg();
+  $("go").disabled = true; $("status").textContent = "Translating…"; $("status").className = "sp hint";
+  closeSheet();
   try {
-    const dir = hasChinese(text) ? "zh-to-en" : "en-to-zh";
-    const prompt = `You are a Mandarin teacher's translation engine. Direction: ${dir}.
-Input: "${text}"
-Return ONLY JSON in this exact shape:
-{
-  "chinese": "simplified Chinese text",
-  "pinyin": "full pinyin with tone marks",
-  "english": "natural English translation",
-  "words": [ { "zh": "word", "pinyin": "pinyin", "en": "short meaning" } ]
-}
-"words" is the Chinese text segmented into natural words in order, including particles. If the input is a single word, words has one entry.`;
-    const out = parseJSON(await askClaude(prompt));
-    current = out;
-    $("direction").textContent = dir === "en-to-zh" ? "English → Chinese" : "Chinese → English";
-    $("main").innerHTML = `
-      <div class="big">${out.chinese}</div>
-      <div class="pinyin">${out.pinyin}</div>
-      <div>${out.english}</div>`;
-    $("words").innerHTML = "";
+    const dir = hasHan(text) ? "zh-to-en" : "en-to-zh";
+    const out = parse(await ask(
+`You are a Mandarin teacher's translation engine. Direction: ${dir}. Input: "${text}"
+If the input is a single character or radical, treat it as a lookup: "english" is its meaning.
+Return ONLY JSON:
+{"chinese":"simplified Chinese text","pinyin":"full pinyin with tone marks","english":"natural English translation","words":[{"zh":"word","pinyin":"pinyin","en":"short meaning"}]}
+"words" is the Chinese text segmented into natural words in order, including particles. A single word gives one entry.`));
+    $("dir").textContent = dir === "en-to-zh" ? "English → Chinese" : "Chinese → English";
+    $("translation").textContent = dir === "en-to-zh" ? out.chinese : out.english;
+    $("pinyinLine").textContent = out.pinyin;
+    const chips = $("chips"); chips.innerHTML = "";
     out.words.forEach(w => {
-      const d = document.createElement("div");
-      d.className = "word";
-      d.innerHTML = `<div class="zh">${w.zh}</div><div class="py">${w.pinyin}</div><div class="en">${w.en}</div>`;
-      d.onclick = () => openWord(w);
-      $("words").appendChild(d);
+      const b = document.createElement("button");
+      b.className = "chip";
+      b.innerHTML = `<span class="zh">${esc(w.zh)}</span><span class="py">${esc(w.pinyin)}</span><span class="en">${esc(w.en)}</span>`;
+      b.onclick = () => { document.querySelectorAll(".chip").forEach(x => x.classList.remove("on")); b.classList.add("on"); openWord(w); };
+      chips.appendChild(b);
     });
-    $("result").classList.remove("hidden");
-    $("status").textContent = "";
+    $("empty").hidden = true; $("result").hidden = false; $("status").textContent = "";
+    if (out.words.length === 1) chips.firstChild.click();
   } catch (e) {
-    $("status").innerHTML = `<span class="err">${e.message}</span>`;
+    $("status").className = "sp err"; $("status").textContent = e.message;
   }
   $("go").disabled = false;
 }
-
-let activeChar = null;
-
+$("go").onclick = translate;
+ 
+/* ---------- word + character detail ---------- */
+let activeChar = null, activeWord = "";
+function closeSheet() { $("sheet").classList.remove("open"); }
+$("close").onclick = closeSheet;
+$("speak").onclick = () => speak(activeWord);
+ 
 function openWord(w) {
-  $("detail").classList.remove("hidden");
-  $("detailHead").innerHTML = `<span class="big">${w.zh}</span> <span class="pinyin">${w.pinyin}</span><div>${w.en}</div>`;
+  activeWord = w.zh;
+  $("dZh").textContent = w.zh; $("dPy").textContent = w.pinyin; $("dEn").textContent = w.en;
   $("explain").textContent = "";
-  const chars = [...w.zh].filter(hasChinese);
-  $("detailChars").innerHTML = "";
+  const row = $("chars"); row.innerHTML = "";
+  const chars = [...w.zh].filter(hasHan);
   chars.forEach(c => {
-    const b = document.createElement("span");
-    b.className = "char";
-    b.textContent = c;
+    const b = document.createElement("button");
+    b.className = "char"; b.textContent = c;
     b.onclick = () => openChar(c, b);
-    $("detailChars").appendChild(b);
+    row.appendChild(b);
   });
-  if (chars.length) openChar(chars[0], $("detailChars").firstChild);
-  else $("charInfo").innerHTML = "";
-  $("detail").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  $("sheet").classList.add("open");
+  if (chars.length) openChar(chars[0], row.firstChild); else $("charInfo").innerHTML = "";
 }
-
+ 
 async function openChar(c, el) {
   activeChar = c;
-  document.querySelectorAll(".char").forEach(x => x.classList.remove("active"));
-  if (el) el.classList.add("active");
+  document.querySelectorAll(".char").forEach(x => x.classList.remove("on"));
+  if (el) el.classList.add("on");
   $("explain").textContent = "";
-  $("charInfo").innerHTML = '<span class="muted">Loading...</span>';
+  $("charInfo").innerHTML = '<div class="hint">Loading…</div>';
   try {
-    const prompt = `Give learner info for the Chinese character "${c}". Return ONLY JSON:
-{
-  "char": "${c}",
-  "pinyin": "pinyin with tone mark",
-  "definition": "clear English definition(s) of this single character",
-  "radical": { "symbol": "main radical", "meaning": "its meaning" },
-  "components": [ { "symbol": "component", "meaning": "meaning", "role": "semantic or phonetic or other" } ],
-  "example_words": [ { "zh": "word", "pinyin": "pinyin", "en": "meaning" } ]
-}
-Give 2 to 3 example words.`;
-    const d = parseJSON(await askClaude(prompt, 1000));
+    const d = parse(await ask(
+`Give learner info for the Chinese character "${c}". Return ONLY JSON:
+{"char":"${c}","pinyin":"pinyin with tone mark","definition":"clear English definition(s) of this single character","radical":{"symbol":"main radical","meaning":"its meaning"},"components":[{"symbol":"component","meaning":"meaning","role":"semantic, phonetic or other"}],"example_words":[{"zh":"word","pinyin":"pinyin","en":"meaning"}]}
+Give 2 to 3 example words.`, 900));
     if (activeChar !== c) return;
-    $("charInfo").innerHTML = `
-      <div><span class="big">${d.char}</span> <span class="pinyin">${d.pinyin}</span></div>
-      <div><b>Definition:</b> ${d.definition}</div>
-      <div style="margin-top:8px"><b>Main radical:</b> ${d.radical.symbol} <span class="muted">(${d.radical.meaning})</span></div>
-      <div style="margin-top:6px"><b>Components:</b><br>${d.components.map(x =>
-        `<span class="comp"><b>${x.symbol}</b>${x.meaning} <span class="muted">(${x.role})</span></span>`).join("")}</div>
-      <div style="margin-top:8px"><b>Used in:</b> ${d.example_words.map(x => `${x.zh} (${x.pinyin}) ${x.en}`).join(" · ")}</div>`;
+    const comps = (d.components || []).map(x =>
+      `<span class="comp"><b>${esc(x.symbol)}</b>${esc(x.meaning)} <span class="hint">(${esc(x.role)})</span></span>`).join("");
+    const ex = (d.example_words || []).map(x => `${esc(x.zh)} <span class="py">${esc(x.pinyin)}</span> ${esc(x.en)}`).join("<br>");
+    $("charInfo").innerHTML =
+`<div><span class="big">${esc(d.char)}</span> <span class="py">${esc(d.pinyin)}</span></div>
+<div style="margin-top:6px">${esc(d.definition)}</div>
+<div class="lbl">Main radical</div><div>${esc(d.radical?.symbol)} <span class="hint">${esc(d.radical?.meaning)}</span></div>
+<div class="lbl">Components</div><div>${comps}</div>
+<div class="lbl">Used in</div><div style="line-height:1.7">${ex}</div>`;
   } catch (e) {
-    $("charInfo").innerHTML = `<span class="err">${e.message}</span>`;
+    $("charInfo").innerHTML = `<div class="err">${esc(e.message)}</div>`;
   }
 }
-
+ 
 $("explainBtn").onclick = async () => {
   if (!activeChar) return;
-  $("explain").textContent = "Thinking...";
+  const c = activeChar;
+  $("explain").textContent = "Thinking…";
   try {
-    const t = await askClaude(`Explain the Chinese character "${activeChar}" for a Mandarin learner. Describe each radical and component, what it means, and how they combine to give the character its meaning or sound. Include a short memory trick and the character's etymology if known. Keep it under 150 words, plain text, no markdown.`, 700);
-    $("explain").textContent = t;
-  } catch (e) {
-    $("explain").innerHTML = `<span class="err">${e.message}</span>`;
-  }
+    const t = await ask(`Explain the Chinese character "${c}" for a Mandarin learner. Describe each radical and component, what it means, and how they combine to give the character its meaning or sound. Include a short memory trick and the etymology if known. Under 150 words, plain text, no markdown.`, 600);
+    if (activeChar === c) $("explain").textContent = t;
+  } catch (e) { $("explain").innerHTML = `<span class="err">${esc(e.message)}</span>`; }
 };
-
-$("go").onclick = translate;
-$("input").addEventListener("keydown", e => {
-  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) translate();
-});
+if (!getKey()) openSetup();
 </script>
 </body>
 </html>
+ 
